@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Peprint erbjuder konsulttjänster inom grafisk produktion i Västerås.">
-  <title>Peprint AB</title><link rel="stylesheet" href="style.css">
+  <title>Peprint AB</title><link rel="stylesheet" href="style.css?v=20260924-1">
 </head>
 <body>
   <svg class="color-filters" aria-hidden="true"><filter id="peprint-orange" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.421" intercept="0.579"/><feFuncG type="linear" slope="0.732" intercept="0.268"/><feFuncB type="linear" slope="0.808" intercept="0.192"/></feComponentTransfer></filter></svg>
@@ -64,7 +64,44 @@
     const observer = new IntersectionObserver(entries => { const visible = entries.find(entry => entry.isIntersecting); if (visible) currentPage = pages.indexOf(visible.target); }, {threshold: .7});
     pages.forEach(page => observer.observe(page));
     if (currentPage > 0) requestAnimationFrame(() => scrollTo(0, pages[currentPage].offsetTop));
-    function go(direction) { if (scrollLocked) return; const next = Math.max(0, Math.min(pages.length - 1, currentPage + direction)); if (next === currentPage) return; scrollLocked = true; currentPage = next; pages[currentPage].scrollIntoView({behavior:'smooth', block:'start'}); setTimeout(() => scrollLocked = false, 800); }
+    function goToPage(index, updateHash = false) {
+      if (scrollLocked || index < 0 || index >= pages.length) return;
+      scrollLocked = true;
+      currentPage = index;
+      pages[currentPage].scrollIntoView({behavior:'smooth', block:'start'});
+      if (updateHash) history.replaceState(null, '', `#${pages[currentPage].id}`);
+      setTimeout(() => scrollLocked = false, 800);
+    }
+    function go(direction) {
+      const next = Math.max(0, Math.min(pages.length - 1, currentPage + direction));
+      if (next !== currentPage) goToPage(next, true);
+    }
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', event => {
+        const target = document.querySelector(link.getAttribute('href'));
+        const index = pages.indexOf(target);
+        if (index < 0) return;
+        event.preventDefault();
+        goToPage(index, true);
+      });
+    });
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartPage = 0;
+    addEventListener('touchstart', event => {
+      touchStartX = event.changedTouches[0].clientX;
+      touchStartY = event.changedTouches[0].clientY;
+      touchStartPage = currentPage;
+    }, {passive:true});
+    addEventListener('touchend', event => {
+      const deltaX = event.changedTouches[0].clientX - touchStartX;
+      const deltaY = event.changedTouches[0].clientY - touchStartY;
+      if (Math.abs(deltaY) >= 40 && Math.abs(deltaY) > Math.abs(deltaX)) {
+        const direction = deltaY < 0 ? 1 : -1;
+        const next = Math.max(0, Math.min(pages.length - 1, touchStartPage + direction));
+        if (next !== touchStartPage) goToPage(next, true);
+      }
+    }, {passive:true});
     addEventListener('wheel', event => { if (Math.abs(event.deltaY) < 2) return; event.preventDefault(); go(Math.sign(event.deltaY)); }, {passive:false});
     addEventListener('keydown', event => { const direction = ['ArrowDown','PageDown',' '].includes(event.key) ? 1 : ['ArrowUp','PageUp'].includes(event.key) ? -1 : 0; if (!direction) return; event.preventDefault(); go(direction); });
   </script>
