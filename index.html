@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Peprint erbjuder konsulttjänster inom grafisk produktion i Västerås.">
-  <title>Peprint AB</title><link rel="stylesheet" href="style.css?v=20260924-1">
+  <title>Peprint AB</title><link rel="stylesheet" href="style.css?v=20260924-2">
 </head>
 <body>
   <svg class="color-filters" aria-hidden="true"><filter id="peprint-orange" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="linear" slope="0.421" intercept="0.579"/><feFuncG type="linear" slope="0.732" intercept="0.268"/><feFuncB type="linear" slope="0.808" intercept="0.192"/></feComponentTransfer></filter></svg>
@@ -61,16 +61,18 @@
     const pages = [...document.querySelectorAll('.snap-page')];
     let currentPage = Math.max(0, pages.findIndex(page => `#${page.id}` === location.hash));
     let scrollLocked = false;
+    let unlockTimer;
     const observer = new IntersectionObserver(entries => { const visible = entries.find(entry => entry.isIntersecting); if (visible) currentPage = pages.indexOf(visible.target); }, {threshold: .7});
     pages.forEach(page => observer.observe(page));
     if (currentPage > 0) requestAnimationFrame(() => scrollTo(0, pages[currentPage].offsetTop));
-    function goToPage(index, updateHash = false) {
-      if (scrollLocked || index < 0 || index >= pages.length) return;
+    function goToPage(index, updateHash = false, force = false) {
+      if ((!force && scrollLocked) || index < 0 || index >= pages.length) return;
+      clearTimeout(unlockTimer);
       scrollLocked = true;
       currentPage = index;
       pages[currentPage].scrollIntoView({behavior:'smooth', block:'start'});
       if (updateHash) history.replaceState(null, '', `#${pages[currentPage].id}`);
-      setTimeout(() => scrollLocked = false, 800);
+      unlockTimer = setTimeout(() => scrollLocked = false, 800);
     }
     function go(direction) {
       const next = Math.max(0, Math.min(pages.length - 1, currentPage + direction));
@@ -82,18 +84,21 @@
         const index = pages.indexOf(target);
         if (index < 0) return;
         event.preventDefault();
-        goToPage(index, true);
+        goToPage(index, true, true);
       });
     });
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartPage = 0;
+    let touchStartedOnNavigation = false;
     addEventListener('touchstart', event => {
       touchStartX = event.changedTouches[0].clientX;
       touchStartY = event.changedTouches[0].clientY;
       touchStartPage = currentPage;
+      touchStartedOnNavigation = Boolean(event.target.closest('a[href^="#"]'));
     }, {passive:true});
     addEventListener('touchend', event => {
+      if (touchStartedOnNavigation) return;
       const deltaX = event.changedTouches[0].clientX - touchStartX;
       const deltaY = event.changedTouches[0].clientY - touchStartY;
       if (Math.abs(deltaY) >= 40 && Math.abs(deltaY) > Math.abs(deltaX)) {
