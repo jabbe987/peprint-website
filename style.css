@@ -111,10 +111,16 @@ a {
   transition: background-color 180ms ease, color 180ms ease;
 }
 
-.page-nav a:hover,
 .page-nav a:focus-visible {
   background: var(--orange);
   color: #fff;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .page-nav a:hover {
+    background: var(--orange);
+    color: #fff;
+  }
 }
 
 .page-nav a:focus-visible {
@@ -225,10 +231,16 @@ figure:hover img {
   transition: background-color 180ms ease, color 180ms ease;
 }
 
-.about-home-link:hover,
 .about-home-link:focus-visible {
   background: var(--orange);
   color: #fff;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .about-home-link:hover {
+    background: var(--orange);
+    color: #fff;
+  }
 }
 
 .about-home-link:focus-visible {
